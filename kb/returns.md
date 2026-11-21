@@ -7,6 +7,7 @@
 
 ## How to return
 - For eligible returns, the customer replies to this email to receive a prepaid return label. Once the item is received and inspected, a refund goes to the original payment method.
+- Refunds never exceed the amount paid for the order.
 - Support replies must not say a return or refund has been processed or issued.
 
 ## Damaged or defective items
