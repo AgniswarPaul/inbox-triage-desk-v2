@@ -186,8 +186,24 @@ def to_cents(raw: str) -> int:
     return round(float(raw.replace(",", "")) * 100)
 
 
-DOLLAR_RE = re.compile(r"\$\s?(\d[\d,]*(?:\.\d{1,2})?)")
+_NUM = r"\d[\d,]*(?:\.\d{1,2})?"
+# Money patterns. Order IDs (ORD-10422), tracking numbers, day counts ("45 days"),
+# and percentages ("10%") match none of these.
+MONEY_RES = [
+    re.compile(rf"\$\s?({_NUM})"),                                    # $48, $96.00
+    re.compile(rf"\b({_NUM})\s?(?:dollars?|usd)\b", re.IGNORECASE),   # 15 dollars, 12.50 USD
+    re.compile(rf"\busd\s?({_NUM})", re.IGNORECASE),                  # USD 12.50
+    re.compile(r"(?<![\w.$-])(\d[\d,]*\.\d{2})(?![\d.%])"),           # bare 96.00
+]
 BANNED_PHRASES = ("has been processed", "has been issued")
+
+
+def money_amounts(text: str) -> set[str]:
+    """Every money amount in the text, as the matched number string."""
+    found = set()
+    for pattern in MONEY_RES:
+        found.update(pattern.findall(text))
+    return found
 
 # ---------------------------------------------------------------- pipeline steps
 
@@ -267,9 +283,9 @@ def guard_draft(draft: str, order: dict | None) -> str | None:
         for key in ("amount", "amount_charged"):
             if order.get(key):
                 allowed.add(to_cents(order[key]))
-    for match in DOLLAR_RE.findall(draft):
-        if to_cents(match) not in allowed:
-            return f"draft mentions ${match}, which is not in the order"
+    for amount in sorted(money_amounts(draft)):
+        if to_cents(amount) not in allowed:
+            return f"draft mentions money amount {amount}, which is not in the order"
     return None
 
 
@@ -341,7 +357,8 @@ async def process_email(client, session, email: dict, today: date, usage: Usage)
 
         await save_ticket(session, ticket)
         return {"email_id": eid, "category": category, "order_id": order_id,
-                "ticket": ticket, "guard": guard, "path": " -> ".join(path)}
+                "ticket": ticket, "guard": guard, "path": " -> ".join(path),
+                "order": order, "policy": policy, "facts": facts}
 
     except Exception as exc:  # one bad email must not sink the batch
         path.append(f"ERROR ({type(exc).__name__}: {exc})")

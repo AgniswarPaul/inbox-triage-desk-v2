@@ -5,13 +5,13 @@ A routing workflow that triages customer emails for a fictional store, Northwind
 
 ## Architecture (routing workflow, NOT an agent)
 1. Load emails from data/emails.json (5 core) and data/emails_extended.json (15 edge cases).
-2. route_email: claude-haiku-5-5 with an XML system prompt and 3 examples returns category (billing | shipping | returns | other) and order_id (ORD + 5 digits or null). Validate in code.
+2. route_email: claude-haiku-5-5 with an XML system prompt and 3 examples returns category (billing | shipping | returns | other) and order_id (ORD + 5 digits or null) via structured outputs (output_config.format, json_schema). Validate in code.
 3. ROUTES dictionary maps category to policy_uri, model, and one category rule. Branch selection = one ROUTES.get(category). No match (other) = human queue, no draft.
 4. fetch_order: MCP tool lookup_order(order_id), only if order_id exists.
 5. fetch_policy: MCP resource kb://policies/{category} (allow list: billing, shipping, returns).
 6. Python computes days_since_delivery. Never ask the model to do date math.
 7. draft_reply: claude-sonnet-5-5 with structured outputs (output_config.format, json_schema) using the create_ticket schema (category, priority, summary, draft_reply, needs_human, reason, order_id). No tools are given to Claude. (claude-sonnet-5-5 rejects forced tool_choice with a 400.)
-8. guard_draft: code scans the draft for "has been processed", "has been issued", or a dollar amount not in the order; on a hit set needs_human true with a reason.
+8. guard_draft: code scans the draft for "has been processed", "has been issued", or a money amount not in the order's amount or amount_charged; on a hit set needs_human true with a reason. Money amounts are: $ amounts, bare numbers with two decimals (96.00), and numbers next to "dollars" or "USD". Order IDs, tracking numbers, day counts, and percentages are not money.
 9. Python passes the ticket to the MCP tool create_ticket, which writes output/tickets.json.
 10. Print the path per email, e.g. "email_3 -> returns -> lookup_order(ORD-10301) -> kb://policies/returns -> draft -> guard ok".
 11. Process emails concurrently with AsyncAnthropic + asyncio.gather; a --sequential flag runs them one by one; print total run time.
@@ -33,7 +33,7 @@ data/orders.csv, data/emails.json, data/emails_extended.json, kb/billing.md, kb/
 1. MCP Python SDK must stay on 1.x: mcp[cli]<2. Use FastMCP from mcp.server.fastmcp.
 2. Do not pass temperature to messages.create.
 3. Always filter response.content for blocks where type == "text" or type == "tool_use"; Sonnet may return thinking blocks first. Use max_tokens of at least 2000 for drafting.
-4. Claude is never given tools. Python controls the order of every step. Structured output comes from structured outputs (output_config.format) for the Sonnet draft, not from tool use.
+4. Claude is never given tools. Python controls the order of every step. Structured output comes from structured outputs (output_config.format) for both the Haiku router and the Sonnet draft, not from tool use.
 5. Never print, log, or commit the API key. Load it from .env with python-dotenv. Never commit .env.
 6. Python only. Local data only. No new categories or features beyond this file without asking.
 
