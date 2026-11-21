@@ -28,7 +28,8 @@ POLICY_CATEGORIES = {"billing", "shipping", "returns"}
 TICKET_CATEGORIES = {"billing", "shipping", "returns", "other"}
 PRIORITIES = {"low", "medium", "high"}
 
-mcp = FastMCP("northwind-support")
+# WARNING level keeps per-request INFO lines out of the triage output.
+mcp = FastMCP("northwind-support", log_level="WARNING")
 
 # One lock so concurrent create_ticket calls never interleave their writes.
 _tickets_lock = asyncio.Lock()
