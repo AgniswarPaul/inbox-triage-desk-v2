@@ -158,6 +158,59 @@ The eval caught a real issue, and fixing it took three rounds.
 - email_10 repeats the customer's claim that the pillow is "unused with tags" as if it were verified.
 - email_17 promises a receipt follow-up that the policy doesn't mention.
 
+## Sample run
+
+Real output of `python triage.py --today 2026-11-20`. Each line is the path one email took through the
+workflow. `other` emails go straight to the human queue with no draft, and the two "customer amount ...
+unverified" steps are the code check from round 3 sending a claimed amount to a human.
+
+```text
+Triaging 20 emails (concurrent, today=2026-11-20)
+
+email_1 -> billing -> lookup_order(ORD-10422) -> kb://policies/billing -> draft -> guard ok  [needs_human=False]
+email_2 -> shipping -> lookup_order(ORD-10388) -> kb://policies/shipping -> draft -> guard ok  [needs_human=False]
+email_3 -> returns -> lookup_order(ORD-10301) -> kb://policies/returns -> draft -> guard ok  [needs_human=False]
+email_4 -> other -> human queue  [needs_human=True]
+email_5 -> other -> human queue  [needs_human=True]
+email_6 -> billing -> no order_id -> kb://policies/billing -> draft -> guard ok  [needs_human=True]
+email_7 -> shipping -> no order_id -> kb://policies/shipping -> draft -> guard ok  [needs_human=True]
+email_8 -> returns -> lookup_order(ORD-99999) -> kb://policies/returns -> draft -> guard ok  [needs_human=True]
+email_9 -> shipping -> lookup_order(ORD-10412) -> kb://policies/shipping -> draft -> guard ok  [needs_human=False]
+email_10 -> returns -> lookup_order(ORD-10455) -> kb://policies/returns -> draft -> guard ok  [needs_human=False]
+email_11 -> returns -> lookup_order(ORD-10433) -> kb://policies/returns -> draft -> guard ok  [needs_human=True]
+email_12 -> shipping -> lookup_order(ORD-10467) -> kb://policies/shipping -> draft -> guard ok  [needs_human=False]
+email_13 -> shipping -> lookup_order(ORD-10388) -> kb://policies/shipping -> draft -> guard ok  [needs_human=False]
+email_14 -> billing -> lookup_order(ORD-10422) -> kb://policies/billing -> draft -> guard ok  [needs_human=False]
+email_15 -> other -> human queue  [needs_human=True]
+email_16 -> other -> human queue  [needs_human=True]
+email_17 -> shipping -> lookup_order(ORD-10388) -> kb://policies/shipping -> draft -> guard ok  [needs_human=False]
+email_18 -> returns -> lookup_order(ORD-10455) -> kb://policies/returns -> draft -> customer amount 150 unverified -> guard ok  [needs_human=True]
+email_19 -> billing -> lookup_order(ORD-10412) -> kb://policies/billing -> draft -> customer amount 15.00 unverified -> guard ok  [needs_human=True]
+email_20 -> other -> human queue  [needs_human=True]
+
+Tickets written to output/tickets.json
+  claude-haiku-5-5: 20162 input / 439 output tokens
+  claude-sonnet-5-5: 20362 input / 4583 output tokens
+Total tokens: 40524 input / 5022 output
+Total run time: 5.64s (concurrent)
+```
+
+One ticket from `output/tickets.json` (email_3, the return outside the window). Python computed the
+45 days; the model only explains the outcome.
+
+```json
+{
+  "email_id": "email_3",
+  "category": "returns",
+  "priority": "low",
+  "summary": "Customer wants to return a Wool Sweater (M) from order ORD-10301 because it doesn't fit. The order was delivered 45 days ago, which is outside the 30-day return window.",
+  "draft_reply": "Hi Maya,\n\nThank you for reaching out, and I'm sorry the sweater doesn't fit the way you hoped. Our returns policy allows returns within 30 days of delivery, and your order was delivered 45 days ago, so unfortunately it falls outside the return window and we're unable to accept this return.\n\nWe appreciate your understanding, and thank you for shopping with us.\n\nWarm regards,\nNorthwind Goods Support",
+  "needs_human": false,
+  "reason": "The order was found and the request is a clear policy outcome (outside the 30-day return window), so a polite decline applies without human escalation.",
+  "order_id": "ORD-10301"
+}
+```
+
 ## Timing: concurrent vs sequential
 
 Real runs on 2026-11-20 with `--today 2026-11-20`:
