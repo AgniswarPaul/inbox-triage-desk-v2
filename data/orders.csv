@@ -1,0 +1,9 @@
+order_id,customer_name,customer_email,item,amount,amount_charged,status,carrier,tracking_number,order_date,delivered_date
+ORD-10422,Priya Shah,priya.shah@example.com,Ceramic Mug Set (4),48.00,96.00,delivered,USPS,9400111899223100422001,2026-11-08,2026-11-13
+ORD-10388,Daniel Kim,daniel.kim@example.com,Canvas Backpack,72.00,72.00,in_transit,USPS,9400111899223197428490,2026-11-14,
+ORD-10301,Maya Lopez,maya.lopez@example.com,Wool Sweater (M),89.00,89.00,delivered,UPS,1Z999AA10123456784,2026-10-01,2026-10-06
+ORD-10455,Sam Rivera,sam.rivera@example.com,Linen Throw Pillow,34.00,34.00,delivered,USPS,9400111899223100455002,2026-11-05,2026-11-10
+ORD-10467,Lena Fischer,lena.fischer@example.com,Cast Iron Skillet,55.00,55.00,processing,,,2026-11-18,
+ORD-10412,Omar Haddad,omar.haddad@example.com,Brass Desk Lamp,64.00,64.00,delayed,FedEx,7712 3456 7890,2026-11-03,
+ORD-10433,Grace Lee,grace.lee@example.com,Glass Flower Vase,42.00,42.00,delivered,UPS,1Z999AA10123456791,2026-11-09,2026-11-15
+ORD-10399,Carlos Mendez,carlos.mendez@example.com,Merino Wool Scarf,29.00,0.00,cancelled,,,2026-11-11,
